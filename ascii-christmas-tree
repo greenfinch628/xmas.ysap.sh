@@ -21,26 +21,27 @@ len=${#color_lights[@]}
 
 # the tree itself - each number represents a specific "light" color
 IFS= read -r -d '' TREE <<-"EOF"
-                  *
-                 / \
-                / 0 \
-               / 1   \
-              /       \
-             /_ 2  1  _\
-              /       \
-             /  1   2  \
-            /           \
-           /   0  3  0   \
-          /_        1    _\
-           /    2        \
-          /  1   0   0    \
-         /    3         3  \
-        /  2        1       \
-        ---------------------
-                 |||
-                /|||\
+          *
+         / \
+        / 0 \
+       / 1   \
+      /       \
+     /_ 2  1  _\
+      /       \
+     /  1   2  \
+    /           \
+   /   0  3  0   \
+  /_        1    _\
+   /    2        \
+  /  1   0   0    \
+ /    3         3  \
+/  2        1       \
+---------------------
+         |||
+        /|||\
 EOF
 TREE_HEIGHT=18
+TREE_WIDTH=20
 
 MESSAGE=(
 	"${color_lights[3]}Merry Christmas!"
@@ -61,6 +62,7 @@ tput civis
 COLS=$(tput cols)
 LINES=$(tput lines)
 middle_y=$((LINES / 2 - (TREE_HEIGHT / 2)))
+middle_x=$((COLUMNS / 2 - (TREE_WIDTH / 2)))
 
 # current color index
 idx=0
@@ -74,14 +76,21 @@ while true; do
 	t=${t// 3 / ${color_lights[(idx + 3) % len]}o${color_tree} }
 
 	# display the tree
-	tput cup "$middle_y" 0
-	echo "$t"
+	x=$((middle_x - 10))
+	y=$middle_y
+	while IFS= read -r line; do
+		tput cup "$y" "$x"
+		echo -n "$line"
+		((y++))
+	done <<< "$t"
+#	echo "$t"
 
 	# display the text
+	x=$((middle_x + 12))
 	y=$((middle_y + 7))
 	for line in "${MESSAGE[@]}"; do
-		tput cup "$y" 35
-		echo "$line"
+		tput cup "$y" "$x"
+		echo -n "$line"
 		((y++))
 	done
 
