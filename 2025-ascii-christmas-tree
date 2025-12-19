@@ -258,7 +258,8 @@ main() {
 			snowflake=${snowflakes[i]}
 			read -r x y col c <<< "$snowflake"
 			((y++))
-#			((SRANDOM % 10 > 7 ? x++ : x))
+			# failed wind attempt
+			# ((SRANDOM % 10 > 7 ? x++ : x))
 			tput cup "$y" "$x"
 			echo -n "$col$c$COLOR_RST"
 			if ((y > LINES)); then
@@ -271,10 +272,10 @@ main() {
 
 		# add a snowflake
 		snowflakes+=(
-			"$((SRANDOM % COLUMNS)) \
+			"$((RANDOM % COLUMNS)) \
 			0 \
-			${SNOWFLAKE_COLORS[SRANDOM % ${#SNOWFLAKE_COLORS[@]}]} \
-			${SNOWFLAKES[SRANDOM % ${#SNOWFLAKES[@]}]}"
+			${SNOWFLAKE_COLORS[RANDOM % ${#SNOWFLAKE_COLORS[@]}]} \
+			${SNOWFLAKES[RANDOM % ${#SNOWFLAKES[@]}]}"
 		)
 
 		# increment the lights and pause for the animation to play
