@@ -162,7 +162,7 @@ usage() {
 	local IFS=
 	cat <<-EOF
 	Usage: ./ascii-christmas-tree [options]
-	Usage: curl xmas.ysap.sh/2025 | bash - [options]
+	Usage: curl xmas.ysap.sh/2025 | bash -s -- [options]
 
 	Options:
 	  -h         print this message and exit
