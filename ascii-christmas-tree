@@ -7,17 +7,17 @@
 # License: MIT
 
 # colors
-color_tree=$(tput setaf 2)
-color_star=$(tput setaf 227)
+COLOR_TREE=$(tput setaf 2)
+COLOR_STAR=$(tput setaf 227)
 
 # lights - dave matched these to "vintaglo vintage christmas lights"
-color_lights=(
+COLOR_LIGHTS=(
 	"$(tput setaf 111)"
 	"$(tput setaf 208)"
 	"$(tput setaf 198)"
 	"$(tput setaf 155)"
 )
-len=${#color_lights[@]}
+COLOR_LIGHTS_LEN=${#COLOR_LIGHTS[@]}
 
 # the tree itself - each number represents a specific "light" color
 IFS= read -r -d '' TREE <<-"EOF"
@@ -44,57 +44,69 @@ TREE_HEIGHT=18
 TREE_WIDTH=20
 
 MESSAGE=(
-	"${color_lights[3]}Merry Christmas!"
-	"${color_lights[3]}From Dave Eddy"
-	"${color_lights[1]}$ ${color_lights[0]}curl ysap.sh"
+	"${COLOR_LIGHTS[3]}Merry Christmas!"
+	"${COLOR_LIGHTS[3]}From Dave Eddy"
+	"${COLOR_LIGHTS[1]}$ ${COLOR_LIGHTS[0]}curl ysap.sh"
 )
 
-# configure terminal for drawing
+tput() {
+#	sleep .1
+	command tput "$@"
+}
+
 cleanup() {
 	tput rmcup
 	tput cnorm
 }
-trap cleanup exit
-tput smcup
-tput civis
 
-# figure out our size
-COLS=$(tput cols)
-LINES=$(tput lines)
-middle_y=$((LINES / 2 - (TREE_HEIGHT / 2)))
-middle_x=$((COLUMNS / 2 - (TREE_WIDTH / 2)))
+main() {
+	# configure terminal for drawing
+	trap cleanup exit
+	tput smcup
+	tput civis
 
-# current color index
-idx=0
-while true; do
-	# stylize and colorize tree
-	t=$color_tree$TREE
-	t=${t// \*/ ${color_star}*${color_tree} }
-	t=${t// 0 / ${color_lights[idx % len]}o${color_tree} }
-	t=${t// 1 / ${color_lights[(idx + 1) % len]}o${color_tree} }
-	t=${t// 2 / ${color_lights[(idx + 2) % len]}o${color_tree} }
-	t=${t// 3 / ${color_lights[(idx + 3) % len]}o${color_tree} }
+	# figure out our size
+	COLUMNS=$(tput cols)
+	LINES=$(tput lines)
 
-	# display the tree
-	x=$((middle_x - 10))
-	y=$middle_y
-	while IFS= read -r line; do
-		tput cup "$y" "$x"
-		echo -n "$line"
-		((y++))
-	done <<< "$t"
-#	echo "$t"
+	local middle_y=$((LINES / 2 - (TREE_HEIGHT / 2)))
+	local middle_x=$((COLUMNS / 2 - (TREE_WIDTH / 2)))
 
-	# display the text
-	x=$((middle_x + 12))
-	y=$((middle_y + 7))
-	for line in "${MESSAGE[@]}"; do
-		tput cup "$y" "$x"
-		echo -n "$line"
-		((y++))
+	# current color index
+	local idx=0
+	local t x y
+	while true; do
+		# stylize and colorize tree
+		t=$COLOR_TREE$TREE
+		t=${t// \*/ ${COLOR_STAR}*${COLOR_TREE} }
+		t=${t// 0 / ${COLOR_LIGHTS[idx % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
+		t=${t// 1 / ${COLOR_LIGHTS[(idx + 1) % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
+		t=${t// 2 / ${COLOR_LIGHTS[(idx + 2) % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
+		t=${t// 3 / ${COLOR_LIGHTS[(idx + 3) % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
+
+		# display the tree
+		x=$((middle_x - 10))
+		y=$middle_y
+		while IFS= read -r line; do
+			tput cup "$y" "$x"
+			echo -n "$line"
+			((y++))
+		done <<< "$t"
+	#	echo "$t"
+
+		# display the text
+		x=$((middle_x + 12))
+		y=$((middle_y + 7))
+		for line in "${MESSAGE[@]}"; do
+			tput cup "$y" "$x"
+			echo -n "$line"
+			((y++))
+		done
+
+		# increment the lights and pause for the animation to play
+		((idx++))
+		sleep 1
 	done
+}
 
-	# increment the lights and pause for the animation to play
-	((idx++))
-	sleep 1
-done
+main "$@"
