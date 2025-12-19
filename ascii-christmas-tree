@@ -9,6 +9,7 @@
 # colors
 COLOR_TREE=$(tput setaf 2)
 COLOR_STAR=$(tput setaf 227)
+COLOR_RST=$(tput sgr0)
 
 # lights - dave matched these to "vintaglo vintage christmas lights"
 COLOR_LIGHTS=(
@@ -50,6 +51,57 @@ MESSAGE=(
 )
 
 TIMER=-1
+SNOWFLAKES=('*' .)
+SNOWFLAKE_COLORS=(
+	"$(tput sgr0)"
+	"$(tput setaf 238)"
+	"$(tput setaf 99)"
+	"$(tput setaf 241)"
+	"$(tput setaf 96)"
+)
+
+tput() {
+	local VERSION='bash tput (1.0.0)'
+
+	local opt OPTIND OPTARG
+	while getopts 'ST:V' opt; do
+		case "$opt" in
+			S) command tput "$@"; return $?;;
+			T) true;;
+			V) echo "$VERSION"; return 0;;
+		esac
+	done
+	shift "$((OPTIND - 1))"
+
+	local ESC=$'\x1b'
+	case "$1" in
+		bel) echo -n $'\x7';;
+		sgr0 | me) echo -n "$ESC[0m";;
+		bold) echo -n "$ESC[1m";;
+		dim) echo -n "$ESC[2m";;
+		rev) echo -n "$ESC[7m";;
+		blink) echo -n "$ESC[5m";;
+		setaf | AF) echo -n "$ESC[38;5;$2m";;
+		setab | AB) echo -n "$ESC[48;5;$2m";;
+		sc) echo -n "${ESC}7";;
+		rc) echo -n "${ESC}8";;
+		cnorm) echo -n "$ESC[?25h";;
+		civis) echo -n "$ESC[?25l";;
+		smcup) echo -n "$ESC[?1049h";;
+		rmcup) echo -n "$ESC[?1049l";;
+		clear) echo -n "$ESC[H$ESC[2J";;
+		home) echo -n "$ESC[H";;
+		cuu) echo -n "$ESC[$2A";;
+		cud) echo -n "$ESC[$2B";;
+		cuf) echo -n "$ESC[$2C";;
+		cub) echo -n "$ESC[$2D";;
+		cup)
+			local row=$(($2 + 1))
+			local col=$(($3 + 1))
+			echo -n "$ESC[$row;${col}H";;
+		*) command tput "$@"; return $?;;
+	esac
+}
 
 get-msecs() {
 	local secs usecs
@@ -66,14 +118,8 @@ end-timer() {
 	local now=${ get-msecs; }
 	local then=$TIMER
 	local delta=$((now - then))
-	echo "($now) ($then) ($delta)" >> timer.txt
 
 	echo "took $delta" >> times.txt
-}
-
-tput() {
-#	sleep .1
-	command tput "$@"
 }
 
 cleanup() {
@@ -93,45 +139,88 @@ main() {
 
 	local middle_y=$((LINES / 2 - (TREE_HEIGHT / 2)))
 	local middle_x=$((COLUMNS / 2 - (TREE_WIDTH / 2)))
-
-	# current color index
-	local idx=0
-	local t x y
+	local lightidx=0
+	local snowflakes=()
+	local floor=()
+	local t x y c i col
+	local snowflake
+	local frames=0
 	while true; do
 		start-timer
+
+		# clear snowflakes
+		for ((i = 0; i < "${#snowflakes[@]}"; i++)); do
+			snowflake=${snowflakes[i]}
+			read -r x y col c <<< "$snowflake"
+			tput cup "$y" "$x"
+			echo -n ' '
+		done
 
 		# stylize and colorize tree
 		t=$COLOR_TREE$TREE
 		t=${t// \*/ ${COLOR_STAR}*${COLOR_TREE} }
-		t=${t// 0 / ${COLOR_LIGHTS[idx % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
-		t=${t// 1 / ${COLOR_LIGHTS[(idx + 1) % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
-		t=${t// 2 / ${COLOR_LIGHTS[(idx + 2) % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
-		t=${t// 3 / ${COLOR_LIGHTS[(idx + 3) % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
+		t=${t// 0 / ${COLOR_LIGHTS[lightidx % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
+		t=${t// 1 / ${COLOR_LIGHTS[(lightidx + 1) % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
+		t=${t// 2 / ${COLOR_LIGHTS[(lightidx + 2) % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
+		t=${t// 3 / ${COLOR_LIGHTS[(lightidx + 3) % COLOR_LIGHTS_LEN]}o${COLOR_TREE} }
 
 		# display the tree
-		x=$((middle_x - 10))
-		y=$middle_y
+		x=5
+		y=$((LINES - TREE_HEIGHT - 1))
 		while IFS= read -r line; do
 			tput cup "$y" "$x"
 			echo -n "$line"
 			((y++))
 		done <<< "$t"
-	#	echo "$t"
 
 		# display the text
-		x=$((middle_x + 12))
-		y=$((middle_y + 7))
+		x=$((5 + TREE_WIDTH + 5))
+		y=$((LINES - 15))
 		for line in "${MESSAGE[@]}"; do
 			tput cup "$y" "$x"
 			echo -n "$line"
 			((y++))
 		done
 
-		# increment the lights and pause for the animation to play
-		((idx++))
+		# simulate the snowfall
+		for ((i = 0; i < "${#snowflakes[@]}"; i++)); do
+			snowflake=${snowflakes[i]}
+			read -r x y col c <<< "$snowflake"
+			((y++))
+			tput cup "$y" "$x"
+			echo -n "$col$c$COLOR_RST"
+			if ((y > LINES)); then
+				((floor[x]++))
+				unset snowflakes[i]
+				continue
+			fi
+			snowflakes[i]="$x $y $col $c"
+		done
+		snowflakes=("${snowflakes[@]}")
 
+		# add a snowflake
+		snowflakes+=(
+			"$((SRANDOM % COLUMNS)) \
+			0 \
+			${SNOWFLAKE_COLORS[SRANDOM % ${#SNOWFLAKE_COLORS[@]}]} \
+			${SNOWFLAKES[SRANDOM % ${#SNOWFLAKES[@]}]}"
+		)
+
+		# draw the floor
+		for x in "${!floor[@]}"; do
+			amount=${floor[x]}
+			tput cup "$COLUMNS" "$x"
+			#echo -n "$amount"
+		done
+
+		# increment the lights and pause for the animation to play
+		((frames++))
+		((frames %= 10))
+		if ((frames == 0)); then
+			((lightidx++))
+		fi
 		end-timer
-		sleep 1
+		sleep .1
 	done
 }
 
