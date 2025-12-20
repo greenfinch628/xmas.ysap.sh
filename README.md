@@ -15,6 +15,13 @@ Run it right now with `curl`:
 curl xmas.ysap.sh | bash
 ```
 
+See previous years with:
+
+```
+curl xmas.ysap.sh/2025 | bash
+curl xmas.ysap.sh/2024 | bash
+```
+
 View it in your browser:
 
 https://xmas.ysap.sh
@@ -22,13 +29,30 @@ https://xmas.ysap.sh
 Clone the repo and run it locally:
 
 ```
-./ascii-christmas-tree
+./2025-ascii-christmas-tree
+./2024-ascii-christmas-tree
 ```
 
-Example
--------
+Arguments
+---------
 
-See how this program was written: https://www.youtube.com/watch?v=NENq-G2PsTo
+The 2025 version of the script allows arguments to be passed in - you can see
+the usage message with:
+
+```
+curl -sS xmas.ysap.sh/2025 | bash -s -- -h
+```
+
+And modify some arguments with:
+
+```
+curl -sS xmas.ysap.sh/2025 | bash -s -- -s .1 -c '._-'
+```
+
+Videos
+------
+
+Creating 2024: https://www.youtube.com/watch?v=NENq-G2PsTo
 
 License
 -------
