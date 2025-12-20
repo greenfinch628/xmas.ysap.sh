@@ -53,7 +53,7 @@ cleanup() {
 	tput rmcup
 	tput cnorm
 }
-trap cleanup exit
+trap cleanup EXIT
 tput smcup
 tput civis
 

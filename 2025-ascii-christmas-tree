@@ -192,7 +192,7 @@ main() {
 	done
 
 	# configure terminal for drawing
-	trap cleanup exit
+	trap cleanup EXIT
 	tput smcup
 	tput civis
 
